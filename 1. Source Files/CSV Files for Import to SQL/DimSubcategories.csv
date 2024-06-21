@@ -1,0 +1,81 @@
+﻿SubcategoryID,Subcategory,CategoryID,CategorySubcategory
+1,Bottles,1,Containers:Bottles
+2,Lids And Pumps,1,Containers:Lids And Pumps
+3,Bags,1,Containers:Bags
+4,Jars,1,Containers:Jars
+5,Boxes,1,Containers:Boxes
+6,Dishsoaps,2,Cleaning Supply:Dishsoaps
+7,Laundry Cleaners,2,Cleaning Supply:Laundry Cleaners
+8,Vinegars,3,Grocery:Vinegars
+9,Drink Accessories,4,Accessories:Drink Accessories
+10,Essential Oils,5,Body Care:Essential Oils
+11,Baking,3,Grocery:Baking
+12,Sweeteners,3,Grocery:Sweeteners
+13,Flours,3,Grocery:Flours
+14,Raw Ingredients,5,Body Care:Raw Ingredients
+15,Bathroom Accessories,4,Accessories:Bathroom Accessories
+16,Tins,1,Containers:Tins
+17,Seeds And Grains,3,Grocery:Seeds And Grains
+18,Beans And Legumes,3,Grocery:Beans And Legumes
+19,Body Salts,5,Body Care:Body Salts
+20,Pastas,3,Grocery:Pastas
+21,Kitchen Accessories,4,Accessories:Kitchen Accessories
+22,Jugs,1,Containers:Jugs
+23,"Balms, Oils And Butters",5,"Body Care:Balms, Oils And Butters"
+24,Condiments,3,Grocery:Condiments
+25,Meat Alternative,3,Grocery:Meat Alternative
+26,Z-Misc,3,Grocery:Z-Misc
+27,Candy,3,Grocery:Candy
+28,Laundry Accessories,4,Accessories:Laundry Accessories
+29,Dried Fruits,3,Grocery:Dried Fruits
+30,Kombucha,3,Grocery:Kombucha
+31,Canned,3,Grocery:Canned
+32,Multi Purpose,2,Cleaning Supply:Multi Purpose
+33,Salts,3,Grocery:Salts
+34,Dental Care,5,Body Care:Dental Care
+35,Cereals,3,Grocery:Cereals
+36,Teas,3,Grocery:Teas
+37,Canisters,1,Containers:Canisters
+38,Nuts,3,Grocery:Nuts
+39,Nut Butters,3,Grocery:Nut Butters
+40,Oils,3,Grocery:Oils
+41,Body Cleansing,5,Body Care:Body Cleansing
+42,Hair Care,5,Body Care:Hair Care
+43,Herbs And Spices,3,Grocery:Herbs And Spices
+44,Lotions,5,Body Care:Lotions
+45,Dairy,3,Grocery:Dairy
+46,Snacks,3,Grocery:Snacks
+47,Selling Supplies,7,Whls_Selling Supplies:Selling Supplies
+48,Facial Care,5,Body Care:Facial Care
+49,Anas Beeswax,8,Local Love:Anas Beeswax
+50,Coffee,3,Grocery:Coffee
+51,Olio Skin,8,Local Love:Olio Skin
+52,Dairy Alternatives,6,Whls_Grocery:Dairy Alternatives
+53,Breads,6,Whls_Grocery:Breads
+54,Fruits,6,Whls_Grocery:Fruits
+55,Coupon,9,Coupon:Coupon
+56,Gift Card,10,Gift Card:Gift Card
+57,Sauces,3,Grocery:Sauces
+58,Beverages,11,Grab & Go:Beverages
+59,Desserts,11,Grab & Go:Desserts
+60,Prepared Foods,11,Grab & Go:Prepared Foods
+61,Meal Prep - Fruits + Veggies,11,Grab & Go:Meal Prep - Fruits + Veggies
+62,Produce,12,Fresh Produce:Produce
+63,Store Supply,13,Store Supply:Store Supply
+64,Baked Goods,11,Grab & Go:Baked Goods
+65,The Bean Whole,8,Local Love:The Bean Whole
+66,Meat Alternatives,6,Whls_Grocery:Meat Alternatives
+67,Other Cleaners,2,Cleaning Supply:Other Cleaners
+68,Produce- Fresh,6,Whls_Grocery:Produce- Fresh
+69,Events,14,Events:Events
+70,Milk Honey Yogurt,8,Local Love:Milk Honey Yogurt
+71,Holiday,15,Holiday Popup:Holiday
+72,Yummy Yami,8,Local Love:Yummy Yami
+73,Season'S,8,Local Love:Season'S
+74,Sweet Hazel,8,Local Love:Sweet Hazel
+75,Drool,8,Local Love:Drool
+76,Pet Accessories,4,Accessories:Pet Accessories
+77,Life Giving Foods,8,Local Love:Life Giving Foods
+78,Snackavist,8,Local Love:Snackavist
+79,Z Nectar,8,Local Love:Z Nectar
+80,Kings Peak Coffee,8,Local Love:Kings Peak Coffee

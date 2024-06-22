@@ -1,2 +1,2 @@
 # BulkGrocery
-Retail Sales Trend analysis of a package free bulk grocery store
+Retail sales trend analysis of a package-free bulk grocery store

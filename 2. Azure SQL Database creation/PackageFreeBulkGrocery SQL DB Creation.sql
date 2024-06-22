@@ -158,3 +158,70 @@ WHERE SaleAmount IS NULL
 DELETE FROM SalesOrderLines
 WHERE SaleAmount IS NULL
 
+
+-- Create a new table to track wholesale vs retail customers
+
+-- First create a new table with a list of unique customerIDs
+SELECT DISTINCT CustomerID
+INTO dimCustomers
+FROM SalesOrders
+
+-- Set Customer ID data type to not null
+ALTER TABLE dimCustomers
+ALTER COLUMN CustomerID NVARCHAR(50) NOT NULL
+
+-- Set primary key of new table
+ALTER TABLE dimCustomers
+ADD CONSTRAINT PK_Customers PRIMARY KEY (CustomerID)
+
+
+-- Add a new column 'Customer Type'
+ALTER TABLE dimCustomers
+ADD CustomerType NVARCHAR(50) NULL
+
+-- Add Foreign Constraint 
+ALTER TABLE SalesOrders
+	ADD CONSTRAINT FK_SalesOrders_dimCustomers
+	FOREIGN KEY (CustomerID) REFERENCES dimCustomers(CustomerID)
+	ON DELETE CASCADE
+	ON UPDATE CASCADE
+
+-- Update the new column to Wholesale for customers identified as wholesale 
+--    based on the CTE WholesaleCustomerUpdate
+
+WITH WholesaleCustomerEval AS (	
+	-- CTE to return a list of wholesale customers
+    SELECT 
+        o.CustomerID
+    FROM SalesOrderLines AS l
+        JOIN SalesOrders AS o
+        ON l.OrderID = o.OrderID
+        JOIN DimProduct AS p 
+        ON l.ProductID = p.ProductID
+        JOIN DimSubcategory AS sc
+        ON p.SubcategoryID = sc.SubcategoryID
+        JOIN DimCategory AS c
+        ON sc.CategoryID = c.CategoryID
+
+    WHERE c.Category IN ('Whls_Grocery','Whls_Selling Supplies')
+        AND p.ProductID NOT IN (86)
+        AND o.CustomerID <> 'Unknown'
+    GROUP BY o.CustomerID, l.ProductID,p.ProductName
+    HAVING SUM(l.SaleAmount) > 75
+)
+	-- Main update statement assigning Wholesale
+UPDATE c
+SET c.CustomerType = 'Wholesale'
+FROM dimCustomers AS c
+	JOIN WholesaleCustomerEval as we
+	ON c.CustomerID = we.CustomerID
+ 
+ -- Update remaining CustomerIDs to Retail
+UPDATE c
+SET c.CustomerType = 'Retail'
+FROM dimCustomers AS c
+WHERE c.CustomerType IS NULL
+
+ SELECT *
+ FROM dimCustomers
+ ORDER BY CustomerType DESC

@@ -225,3 +225,23 @@ WHERE c.CustomerType IS NULL
  SELECT *
  FROM dimCustomers
  ORDER BY CustomerType DESC
+
+ -- Rename table
+ EXEC sp_rename 'dbo.dimCustomers', 'DimCustomers'
+
+
+ -- Address SalesOrderLines with Null ProductID
+ -- Identify Null Lines
+SELECT SUM (SaleAmount)
+  FROM [dbo].[SalesOrderLines]
+  WHERE ProductID IS NULL
+  GROUP BY ProductID
+
+-- Create a new product to capture sales without a product ID
+INSERT INTO DimProduct (ProductID, ProductName, SubcategoryID, Active, SKU)
+VALUES (2000,'No Product',26,1,'NONE')
+
+-- Assign new product 2000 to Sales Order Lines without ProductID
+UPDATE SalesOrderLines
+SET ProductID = 2000
+WHERE ProductID IS NULL

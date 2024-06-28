@@ -1,3 +1,5 @@
+---- IMPORT TABLES, CREATE FOREIGN KEYS, SET DATA TYPES
+
 -- Import Flat Files (CSV) using SQL Wizard
 
 -- Review Null Values in Imported Tables
@@ -9,7 +11,6 @@ SELECT *
 FROM SalesOrderLines
 WHERE OrderID IS NULL
 
-
 -- Remove Rows from SalesOrders and SalesOrderLines where OrderID is null
 DELETE FROM SalesOrders
 WHERE OrderID IS NULL
@@ -20,15 +21,8 @@ WHERE OrderID IS NULL
 -- Rename selected columns
 EXEC sp_rename 'dbo.SalesOrderLines.Product_Price','LinePriceEach'
 EXEC sp_rename 'dbo.SalesOrderLines.TotalPrice','SaleAmount'
-EXEC sp_rename 'dbo.dimProduct.Product_Name', 'ProductName'
-EXEC sp_rename 'dbo.dimProduct.Product_Description', 'ProductDescription'
-
--- Rename tables to singluar naming convention
-EXEC sp_rename 'dbo.DimSubcategories', 'DimSubcategory'
-EXEC sp_rename 'dbo.DimCategories', 'DimCategory'
-EXEC sp_rename 'dbo.DimProducts', 'DimProduct'
-
-
+EXEC sp_rename 'dbo.DimProductss.Product_Name', 'ProductName'
+EXEC sp_rename 'dbo.DimProductss.Product_Description', 'ProductDescription'
 
 -- Drop Columns
 ALTER TABLE dbo.SalesOrderLines DROP COLUMN Tax
@@ -44,17 +38,31 @@ ALTER COLUMN LinePriceEach DECIMAL(8,2)
 ALTER TABLE SalesOrderLines
 ALTER COLUMN SaleAmount DECIMAL(8,2)
 
-ALTER TABLE DimProduct
+ALTER TABLE DimProducts
 ALTER COLUMN PriceEach DECIMAL(8,2)
 
-ALTER TABLE DimProduct
+ALTER TABLE DimProducts
 ALTER COLUMN Cost DECIMAL(8,2)
 
-/* Create Relationships using Table Designer (no code)
-PK dimCategory.CategoryID, FK dimSubcategory.CategoryID 
-PK dimSubcategory.SubcategoryID, FK dimProduct.SubcategoryID
-PK dimProduct.ProductID, FK SalesOrderLines.ProductID
-*/
+--Create Foreign Keys
+
+ALTER TABLE DimSubcategories
+	ADD CONSTRAINT FK_DimCategories_DimSubcategories
+	FOREIGN KEY (CategoryID) REFERENCES DimCategories(CategoryID)
+	ON DELETE CASCADE
+	ON UPDATE CASCADE
+
+ALTER TABLE DimProducts
+	ADD CONSTRAINT FK_DimSubcategories_DimProducts
+	FOREIGN KEY (SubcategoryID) REFERENCES DimSubcategories(SubcategoryID)
+	ON DELETE CASCADE
+	ON UPDATE CASCADE
+
+ALTER TABLE SalesOrderLines
+	ADD CONSTRAINT FK_DimProducts_SalesOrderLines
+	FOREIGN KEY (ProductID) REFERENCES DimProducts(ProductID)
+	ON DELETE CASCADE
+	ON UPDATE CASCADE
 
 -- Debug Error in creating SalesOrders, SalesOrderLines relationshp
 
@@ -97,56 +105,56 @@ SELECT
 	OrderDateTime
 FROM SalesOrders
 
+-- Drop Columns
+ALTER TABLE DimProducts
+DROP COLUMN SKU
+
+ALTER TABLE DimSubcategories
+DROP COLUMN CategorySubcategory
+
+ALTER TABLE SalesOrders
+DROP COLUMN Payment_Type
+
+ALTER TABLE SalesOrders
+DROP COLUMN Station
+
+---- MAKE REVISIONS TO SUBCATEGORIES AND PRODUCT ASSIGNMENTS
+
 -- Make updates to Subcategories
 --Create a new subcategory for Hugo Coffee and update the Product
-INSERT INTO DimSubcategory (SubcategoryID, Subcategory, CategoryID, CategorySubcategory)
-VALUES (81,'Hugo Coffee',8,'Local Love:Hugo Coffee')
+INSERT INTO DimSubcategories (SubcategoryID, Subcategory, CategoryID)
+VALUES (81,'Hugo Coffee',8)
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 81
 WHERE ProductID = 842
 *
 -- Create a new subcategory for Salsa del Diablo and update the product
-INSERT INTO DimSubcategory (SubcategoryID, Subcategory, CategoryID, CategorySubcategory)
-VALUES (82,'Salsa',8,'Local Love:Salsa')
+INSERT INTO DimSubcategories (SubcategoryID, Subcategory, CategoryID)
+VALUES (82,'Salsa',8)
 
-UPDATE DimSubcategory
+UPDATE DimSubcategories
 SET Subcategory = 'Salsa del Diablo'
 WHERE SubcategoryID =82
 
-UPDATE DimSubcategory
-SET CategorySubCategory = 'Local Love: Salsa del Diablo'
-WHERE SubcategoryID =82
-
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 82
 WHERE ProductID IN (46, 719,720,727,928,978,1073,1107,1173)
 
-
 -- Update the Category for selected products, classifying them as 'Local Love'
-UPDATE DimSubcategory
+UPDATE DimSubcategories
 SET CategoryID = 8
 WHERE SubcategoryID IN (30,59)
 
-UPDATE DimSubcategory
-SET CategorySubcategory = 'Local Love:Kombucha'
-WHERE SubcategoryID IN (30)
-
-UPDATE DimSubcategory
-SET CategorySubcategory = 'Local Love:Desserts'
-WHERE SubcategoryID IN (59)
-
 -- Create a new subcategory for Polka Bean and update product
-INSERT INTO DimSubcategory (SubcategoryID, Subcategory, CategoryID, CategorySubcategory)
-VALUES (83,'Polka Bean',8,'Local Love:Polka Bean')
+INSERT INTO DimSubcategories (SubcategoryID, Subcategory, CategoryID)
+VALUES (83,'Polka Bean',8)
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 83
 WHERE ProductID IN (454,456,457,487,554,555,601,613,614,654,711)
 
--- Create new read only user for database using SQL Authentication
-CREATE USER groceryuser WITH PASSWORD = '[omitted]'
-ALTER ROLE db_datareader ADD MEMBER groceryuser
+---- ADDRESS NULL VALUES IN SALESORDERLINES
 
 --Review for null values in SalesOrderLines to resolve
 -- 'Null value is eliminated by an aggregate or other SET operation' when running queries
@@ -159,30 +167,36 @@ DELETE FROM SalesOrderLines
 WHERE SaleAmount IS NULL
 
 
--- Create a new table to track wholesale vs retail customers
+---- CREATE A NEW TABLE TO TRACK WHOLESALE AND RETAIL CUSTOMERS
 
 -- First create a new table with a list of unique customerIDs
 SELECT DISTINCT CustomerID
-INTO dimCustomers
+INTO DimCustomers
 FROM SalesOrders
 
--- Set Customer ID data type to not null
-ALTER TABLE dimCustomers
+DELETE FROM DimCustomers
+WHERE CustomerID IS NULL
+
+-- Set Customer ID data type to Nvarchar(5) and not null
+ALTER TABLE DimCustomers
 ALTER COLUMN CustomerID NVARCHAR(50) NOT NULL
 
+-- Change datatype of SalesOrders CustomerID
+ALTER TABLE SalesOrders
+ALTER COLUMN CustomerID NVARCHAR(50)
+
 -- Set primary key of new table
-ALTER TABLE dimCustomers
+ALTER TABLE DimCustomers
 ADD CONSTRAINT PK_Customers PRIMARY KEY (CustomerID)
 
-
 -- Add a new column 'Customer Type'
-ALTER TABLE dimCustomers
+ALTER TABLE DimCustomers
 ADD CustomerType NVARCHAR(50) NULL
 
 -- Add Foreign Constraint 
 ALTER TABLE SalesOrders
 	ADD CONSTRAINT FK_SalesOrders_dimCustomers
-	FOREIGN KEY (CustomerID) REFERENCES dimCustomers(CustomerID)
+	FOREIGN KEY (CustomerID) REFERENCES DimCustomers(CustomerID)
 	ON DELETE CASCADE
 	ON UPDATE CASCADE
 
@@ -196,11 +210,11 @@ WITH WholesaleCustomerEval AS (
     FROM SalesOrderLines AS l
         JOIN SalesOrders AS o
         ON l.OrderID = o.OrderID
-        JOIN DimProduct AS p 
+        JOIN DimProducts AS p 
         ON l.ProductID = p.ProductID
-        JOIN DimSubcategory AS sc
+        JOIN DimSubcategories AS sc
         ON p.SubcategoryID = sc.SubcategoryID
-        JOIN DimCategory AS c
+        JOIN DimCategories AS c
         ON sc.CategoryID = c.CategoryID
 
     WHERE c.Category IN ('Whls_Grocery','Whls_Selling Supplies') --include customers that purchased whls products
@@ -214,23 +228,30 @@ WITH WholesaleCustomerEval AS (
 -- Update the new dimCustomer table, assigning Wholesale to the CustomerIDs returned in the CTE above
 UPDATE c
 SET c.CustomerType = 'Wholesale'
-FROM dimCustomers AS c
-	JOIN WholesaleCustomerEval as we
+FROM DimCustomers AS c
+	INNER JOIN WholesaleCustomerEval as we
 	ON c.CustomerID = we.CustomerID
  
  -- Update remaining CustomerIDs to Retail
 UPDATE c
 SET c.CustomerType = 'Retail'
-FROM dimCustomers AS c
+FROM DimCustomers AS c
 WHERE c.CustomerType IS NULL
 
  SELECT *
- FROM dimCustomers
+ FROM DimCustomers
  ORDER BY CustomerType DESC
 
- -- Rename table
- EXEC sp_rename 'dbo.dimCustomers', 'DimCustomers'
+---- UPDATE NULL CUSTOMERID IN SALES ORDER TO IDENTIFY ANONYMOUS CUSTOMERS
+INSERT INTO DimCustomers(CustomerID, CustomerType)
+VALUES ('Unknown','Retail')
 
+UPDATE SalesOrders
+SET CustomerID = 'Unknown'
+WHERE CustomerID IS NULL
+
+
+---- ASSIGN A PRODUCTID OF 2000 TO SALESORDERLINES WITH NO PRODUCTID
 
  -- Address SalesOrderLines with Null ProductID
  -- Identify Null Lines
@@ -240,36 +261,40 @@ SELECT SUM (SaleAmount)
   GROUP BY ProductID
 
 -- Create a new product to capture sales without a product ID
-INSERT INTO DimProduct (ProductID, ProductName, SubcategoryID, Active, SKU)
-VALUES (2000,'No Product',26,1,'NONE')
+INSERT INTO DimProducts (ProductID, ProductName, SubcategoryID, Active)
+VALUES (2000,'No Product',26,1)
 
 -- Assign new product 2000 to Sales Order Lines without ProductID
 UPDATE SalesOrderLines
 SET ProductID = 2000
 WHERE ProductID IS NULL
 
----- CREATE A NEW FIELD ON PRODUCT DIMENSION TABLE: PRICING TYPE
+
+---- DEFINE PRICING TYPE OF PERPOUND VS EACH AND CALCULATE POUNDS SOLD
+
+---- CREATE A NEW FIELD ON PRODUCT DIMENSION TABLE: PRICING TYPE AND ASSIGN VALUES
+
 -- Create a new column on the product table to define Pricing Type (PerPound or Each)
-ALTER TABLE DimProduct
+ALTER TABLE DimProducts
 Add PricingType VARCHAR(8)
 
--- Assign Default Value of PerPound
-Update DimProduct
+-- Assign Default Value of PerPound to all products
+Update DimProducts
 SET PricingType = 'PerPound'
 
 --Assign certain categories as 'Each'
-UPDATE DimProduct
+UPDATE DimProducts
 SET PricingType = 'Each'
-FROM DimProduct AS p
-	JOIN DimSubcategory AS sc
+FROM DimProducts AS p
+	JOIN DimSubcategories AS sc
 	ON p.SubcategoryID = sc.SubcategoryID
-	JOIN DimCategory AS c
+	JOIN DimCategories AS c
 	ON sc.CategoryID = c.CategoryID
 WHERE Category IN('Accessories', 'Containers','Events','Gift Card','Grab & Go')
 
 
--- Update Pricing Type on specific products based on review
-UPDATE DimProduct
+-- Update Pricing Type on specific products based on review and subject matter expertise
+UPDATE DimProducts
 SET PricingType = 'Each'
 WHERE ProductID IN (6,8,10,15,20,23,25,29,31,32,34,43,46,50,53,59,74,116,126,129,160,195,
 						449,454,458,459,460,471,482,489,501,536,537,538,575,576,577,578,579,580,627,630,639,649,664,666,667,670,695,696,
@@ -280,40 +305,22 @@ WHERE ProductID IN (6,8,10,15,20,23,25,29,31,32,34,43,46,50,53,59,74,116,126,129
 					OR ProductID BETWEEN 655 AND 662
 					OR ProductID BETWEEN 736 AND 743 
 
-UPDATE DimProduct
+-- Update Products with 'WHLS' in the name to 'Each'
+UPDATE DimProducts
 SET PricingType = 'Each'
 WHERE ProductName LIKE '%WHLS%'
 
-
 -- Update Polka Bean Products to Pricing Type of 'each'
-UPDATE DimProduct
+UPDATE DimProducts
 Set PricingType = 'Each'
 WHERE ProductName LIKE '%Polka%'
 
--- Review product pricing type by category
-SELECT 
-	p.ProductID,
-    c.Category,
-	sc.Subcategory,
-	p.ProductName,
-	p.PricingType,
-    SUM(l.SaleAmount) AS TotalSales,
-      SUM(l.PoundsSold) AS Pounds
-        
-FROM SalesOrderLines AS l
-    JOIN DimProduct AS p
-    ON l.ProductID = p.ProductID
-    JOIN DimSubcategory AS sc
-    ON p.SubcategoryID = sc.SubcategoryID
-    JOIN DimCategory AS c
-    ON sc.CategoryID = c.CategoryID
-
-GROUP BY c.Category, sc.Subcategory,p.ProductName,p.PricingType,p.ProductID
-ORDER BY c.Category
 
 ---- CREATE A NEW FIELD ON SALES ORDER LINES: POUNDS SOLD
+
 -- Create a view to calculate pounds sold
-DROP VIEW IF EXISTS PoundsSold;
+DROP VIEW IF EXISTS PoundsSold
+
 CREATE VIEW PoundsSold AS
 SELECT 
 	l.SalesOrderLineID,
@@ -322,7 +329,7 @@ SELECT
 	p.PriceEach,
 	round(l.SaleAmount/p.PriceEach,4) AS PoundsSold
 FROM SalesOrderLines AS l
-	JOIN DimProduct as p
+	JOIN DimProducts as p
 	ON l.ProductID = p.ProductID
 WHERE p.PricingType = 'PerPound'
 GO
@@ -336,7 +343,7 @@ ADD PoundsSold DECIMAL(10,4)
 UPDATE SalesOrderLines
 SET PoundsSold = s.PoundsSold
 FROM SalesOrderLines AS l
-	JOIN DimProduct as p
+	JOIN DimProducts as p
 	ON l.ProductID = p.ProductID
 	JOIN PoundsSold as s
 	ON l.SalesOrderLineID = s.SalesOrderLineID
@@ -346,7 +353,7 @@ WHERE p.PricingType = 'PerPound'
 UPDATE SalesOrderLines
 SET PoundsSold = 0
 FROM SalesOrderLines AS l
-	JOIN DimProduct AS p
+	JOIN DimProducts AS p
 	ON l.ProductID = p.ProductID
 WHERE p.PricingType = 'Each'
 
@@ -357,7 +364,7 @@ FROM SalesOrderLines
 WHERE PoundsSold IS NULL
 
 
----- Make updates to subcategories and categories for Wholesale products
+---- UPDATE THE SUBCATEGORY FOR WHOLESALE PRODUCTS
 
 -- review products with WHLS in name
 SELECT
@@ -368,104 +375,142 @@ SELECT
 	sc.Subcategory,
 	sc.CategoryID,
 	c.Category
-FROM DimProduct AS p
-	JOIN DimSubcategory AS sc
+FROM DimProducts AS p
+	JOIN DimSubcategories AS sc
 	ON p.SubcategoryID = sc.SubcategoryID
-	JOIN DimCategory As c
+	JOIN DimCategories As c
 	ON sc.CategoryID = c.CategoryID
 WHERE p.ProductName LIKE '%WHLS%'
 ORDER BY SubcategoryID
 
 -- Create New Subcategories
-INSERT INTO DimSubcategory (SubcategoryID, Subcategory, CategoryID, CategorySubcategory)
+INSERT INTO DimSubcategories (SubcategoryID, Subcategory, CategoryID)
 VALUES
-	(90,'Vinegars', 6, 'Whls_Grocery: Vinegars'),
-	(91,'Baking', 6, 'Whls_Grocery: Baking'),
-	(92,'Sweeteners', 6, 'Whls_Grocery: Sweeteners'),
-	(93,'Flours', 6, 'Whls_Grocery: Flours'),
-	(94,'Seeds and Grains', 6, 'Whls_Grocery: Seeds and Grains'),
-	(95,'Condiments', 6, 'Whls_Grocery: Condiments'),
-	(96,'Canned', 6, 'Whls_Grocery: Canned'),
-	(97,'Salts', 6, 'Whls_Grocery: Salts'),
-	(98,'Nuts', 6, 'Whls_Grocery: Nuts'),
-	(99,'Nut Butters', 6, 'Whls_Grocery: Nut Butters'),
-	(100,'Oils', 6, 'Whls_Grocery: Oils'),
-	(101,'Herbs and Spices', 6, 'Whls_Grocery: Herbs and Spices'),
-	(102,'Dairy', 6, 'Whls_Grocery: Dairy')
+	(90,'Vinegars', 6),
+	(91,'Baking', 6),
+	(92,'Sweeteners', 6),
+	(93,'Flours', 6),
+	(94,'Seeds and Grains', 6),
+	(95,'Condiments', 6),
+	(96,'Canned', 6),
+	(97,'Salts', 6),
+	(98,'Nuts', 6),
+	(99,'Nut Butters', 6),
+	(100,'Oils', 6),
+	(101,'Herbs and Spices', 6),
+	(102,'Dairy', 6)
 
 -- Update the Subcategory assigned to wholesale products
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 90
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 8
 	
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 91
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 11
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 92
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 12
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 93
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 13
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 94
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 17
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 95
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 24
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 96
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 31
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 97
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 33
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 98
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 38
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 99
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 39
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 100
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 40
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 101
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 43
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 102
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 45
 
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 66
 WHERE ProductName LIKE '%WHLS%'
 	AND SubcategoryID = 25
 
 --- Reassign Vinegar
-UPDATE DimProduct
+UPDATE DimProducts
 SET SubcategoryID = 32
 WHERE ProductID = 5
+
+
+
+---- CREATE A TABLE FOR STORE LOCATION AND ASSIGN ORDERS TO A LOCATION
+-- Create the table
+CREATE TABLE DimLocation (
+	LocationID tinyint NOT NULL,
+	LocationName varchar(50),
+	Sqft int
+	PRIMARY KEY (LocationID)
+	)
+
+-- Add values to table for each store location
+INSERT INTO DimLocation (LocationID, LocationName, Sqft)
+VALUES	(1,'355N 500W',800),
+		(2, '1085S 300W',1200)
+
+-- Add a column to the SalesOrders table
+ALTER TABLE SalesOrders
+ADD LocationID tinyint
+
+
+-- Add Foreign Key constraint to SalesOrder Table
+ALTER TABLE SalesOrders
+	ADD CONSTRAINT FK_DimLocation_SalesOrders
+	FOREIGN KEY (LocationID) REFERENCES DimLocation(LocationID)
+	ON DELETE CASCADE
+	ON UPDATE CASCADE
+
+-- Set Location to 1 for orders through 2021-09-19, and to Location 2 for orders after that date
+UPDATE SalesOrders
+SET LocationID = 1
+WHERE OrderDate <= '2021-09-19'
+
+UPDATE SalesOrders
+SET LocationID = 2
+WHERE OrderDate > '2021-09-19'
+
 

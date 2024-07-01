@@ -513,4 +513,45 @@ UPDATE SalesOrders
 SET LocationID = 2
 WHERE OrderDate > '2021-09-19'
 
+---- ASSIGN CUSTOMER COHORT BASED ON FIRST ORDER DATE
+-- Create two new columns in the DimCustomers Table
 
+ALTER TABLE DimCustomers
+ADD 
+	CohortMonth DATETIME2,
+	CohortQuarter VARCHAR(8)
+
+
+-- CTE to create list of cohorts
+
+WITH Cohort AS(
+	SELECT 
+		c.CustomerID AS CustomerID,
+		MIN(o.OrderDate) AS FirstOrder,
+		EOMONTH(MIN(o.OrderDate)) AS CohMonth,
+		
+		CASE 
+			WHEN MONTH(MIN(o.OrderDate)) IN(1,2,3) THEN CONCAT(YEAR(MIN(O.OrderDate)),'-Q1')
+			WHEN MONTH(MIN(o.OrderDate)) IN(4,5,6) THEN CONCAT(YEAR(MIN(O.OrderDate)),'-Q2') 
+			WHEN MONTH(MIN(o.OrderDate)) IN(7,8,9) THEN CONCAT(YEAR(MIN(O.OrderDate)),'-Q3') 
+			WHEN MONTH(MIN(o.OrderDate)) IN(10,11,12) THEN CONCAT(YEAR(MIN(O.OrderDate)),'-Q4') 
+		ELSE 'AssignCohort'
+		END AS CohQuarter
+
+	FROM DimCustomers AS c
+		LEFT JOIN SalesOrders AS o ON c.CustomerID = o.CustomerID
+
+	GROUP BY c.CustomerID
+)
+-- Assign cohort values to CustomerID in DimCustomer Table
+UPDATE DimCustomers
+SET 
+	CohortMonth = co.CohMonth,
+	CohortQuarter = co.CohQuarter
+FROM 
+	DimCustomers AS c
+	JOIN Cohort AS co ON c.CustomerID = co.CustomerID
+
+-- Change datatype of Cohort Month
+ALTER TABLE DimCustomers
+ALTER COLUMN CohortMonth DATE

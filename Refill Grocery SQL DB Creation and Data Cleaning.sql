@@ -77,7 +77,7 @@ SELECT OrderID
 DELETE FROM SalesOrderLines
 WHERE OrderID=44
 
--- Add Foreign Constraint using code
+-- Add Foreign Constraint 
 ALTER TABLE SalesOrderLines
 	ADD CONSTRAINT FK_SalesOrders_SalesOrderLines
 	FOREIGN KEY (OrderID) REFERENCES SalesOrders(OrderID)
@@ -88,7 +88,7 @@ ALTER TABLE SalesOrderLines
 SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
 WHERE TABLE_NAME='SalesOrderLines'
 
--- Crate a new column that has the Order Date and Order Time combined
+-- Create a new column that has the Order Date and Order Time combined
 -- Add the new column
 ALTER TABLE SalesOrders
 ADD OrderDateTime DATETIME2
@@ -201,7 +201,6 @@ ALTER TABLE SalesOrders
 	ON UPDATE CASCADE
 
 -- Update the new column to Wholesale for customers identified as wholesale 
---    based on the CTE WholesaleCustomerUpdate
 
 -- CTE to return a list of wholesale customers
 WITH WholesaleCustomerEval AS (	
@@ -217,15 +216,18 @@ WITH WholesaleCustomerEval AS (
         JOIN DimCategories AS c
         ON sc.CategoryID = c.CategoryID
 
-    WHERE c.Category IN ('Whls_Grocery','Whls_Selling Supplies') --include customers that purchased whls products
-        AND p.ProductID NOT IN (86) 			--exclude ProductID 86, as it is also sold retail
-        AND o.CustomerID <> 'Unknown' 			-- Exclude anonymous customers
+--include customers that purchased whls products
+    WHERE c.Category IN ('Whls_Grocery','Whls_Selling Supplies') 
+--exclude ProductID 86, as it is also sold retail
+        AND p.ProductID NOT IN (86) 			
+-- Exclude anonymous customers
+        AND o.CustomerID <> 'Unknown' 			
     GROUP BY o.CustomerID, l.ProductID,p.ProductName
-    HAVING SUM(l.SaleAmount) > 75 			-- only include lines where a customer 
-							--purchased over $75 of the designated products
+-- only include lines where a customer purchased over $75 of the designated products
+    HAVING SUM(l.SaleAmount) > 75 			
 )
 
--- Update the new dimCustomer table, assigning Wholesale to the CustomerIDs returned in the CTE above
+-- Update the DimCustomers table, assigning Wholesale to the CustomerIDs returned in the CTE above
 UPDATE c
 SET c.CustomerType = 'Wholesale'
 FROM DimCustomers AS c
@@ -555,3 +557,80 @@ FROM
 -- Change datatype of Cohort Month
 ALTER TABLE DimCustomers
 ALTER COLUMN CohortMonth DATE
+
+---- REFINE CATEGORIES AND SUBCATEGORIES
+
+-- Add a field to DimProducts for local
+ALTER TABLE DimProducts
+ADD LocalProduct BIT
+
+-- Set default value to 0
+UPDATE DimProducts
+SET LocalProduct =0
+
+-- Update Local Love Products to indicate LocalProduct = 1
+UPDATE p
+SET LocalProduct = 1
+FROM DimProducts AS p
+	JOIN DimSubcategories AS sc ON p.SubcategoryID = sc.SubcategoryID
+WHERE CategoryID = 8
+
+-- Update Local Love Category to Grocery
+UPDATE DimSubcategories
+SET CategoryID = 3
+WHERE CategoryID = 8
+
+-- Update Grabe and Go Category to Grocery
+UPDATE DimSubcategories
+SET CategoryID = 3
+WHERE CategoryID = 11
+
+-- Update Fresh Produce to Grocery
+UPDATE DimSubcategories
+SET CategoryID = 3
+WHERE CategoryID = 12
+
+-- Update more products to local
+UPDATE DimProducts
+SET LocalProduct = 1
+WHERE ProductID IN (525,526,527)
+
+UPDATE DimProducts
+SET 
+	LocalProduct = 1,
+	SubcategoryID = 30
+WHERE ProductID IN (396,397,398)
+
+UPDATE DimProducts
+SET 
+	LocalProduct = 1,
+	SubcategoryID = 65
+WHERE ProductID =486 OR ProductID BETWEEN 279 AND 284
+
+UPDATE DimProducts
+SET LocalProduct = 1
+WHERE SubcategoryID = 60
+
+
+-- Merge other Categories
+-- merge wholesale categories
+UPDATE DimSubcategories
+SET CategoryID = 6
+WHERE CategoryID = 7
+
+-- Create a new category
+INSERT INTO DimCategories (CategoryID,Category)
+Values (16, 'Other')
+
+
+-- Update selected subcategories to new other category
+UPDATE DimSubcategories
+SET CategoryID = 16
+WHERE SubcategoryID IN (55,56,63)
+
+-- Set Cohort for anonymous customer to null
+UPDATE DimCustomers
+SET 
+	CohortMonth = NULL,
+	CohortQuarter = NULL
+WHERE CustomerID = 'Unknown'

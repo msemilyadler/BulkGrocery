@@ -611,6 +611,10 @@ UPDATE DimProducts
 SET LocalProduct = 1
 WHERE SubcategoryID = 60
 
+-- Update Olio subcategory to body care
+UPDATE DimSubcategories
+SET CategoryID = 5
+WHERE SubcategoryID = 51
 
 -- Merge other Categories
 -- merge wholesale categories
@@ -634,3 +638,5 @@ SET
 	CohortMonth = NULL,
 	CohortQuarter = NULL
 WHERE CustomerID = 'Unknown'
+
+

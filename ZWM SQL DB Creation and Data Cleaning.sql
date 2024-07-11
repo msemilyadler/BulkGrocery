@@ -128,7 +128,7 @@ VALUES (81,'Hugo Coffee',8)
 UPDATE DimProducts
 SET SubcategoryID = 81
 WHERE ProductID = 842
-*
+
 -- Create a new subcategory for Salsa del Diablo and update the product
 INSERT INTO DimSubcategories (SubcategoryID, Subcategory, CategoryID)
 VALUES (82,'Salsa',8)
@@ -207,13 +207,13 @@ WITH WholesaleCustomerEval AS (
     SELECT 
         o.CustomerID
     FROM SalesOrderLines AS l
-        JOIN SalesOrders AS o
+        INNER JOIN SalesOrders AS o 		--only include SalesOrderLines that have a SalesOrder (should be 100%)
         ON l.OrderID = o.OrderID
-        JOIN DimProducts AS p 
+        INNER JOIN DimProducts AS p 		-- only include SalesOrdeLines that have a ProductID (should be 100%)
         ON l.ProductID = p.ProductID
-        JOIN DimSubcategories AS sc
+        INNER JOIN DimSubcategories AS sc 	-- only include lines were the ProductID has a SubcategoryID (should be 100%)
         ON p.SubcategoryID = sc.SubcategoryID
-        JOIN DimCategories AS c
+        LEFT JOIN DimCategories AS c		-- do not exclude rows where the Subcategory does not have a Category (should be 0% excluded)
         ON sc.CategoryID = c.CategoryID
 
 --include customers that purchased whls products
@@ -226,6 +226,7 @@ WITH WholesaleCustomerEval AS (
 -- only include lines where a customer purchased over $75 of the designated products
     HAVING SUM(l.SaleAmount) > 75 			
 )
+
 
 -- Update the DimCustomers table, assigning Wholesale to the CustomerIDs returned in the CTE above
 UPDATE c
@@ -284,13 +285,13 @@ Add PricingType VARCHAR(8)
 Update DimProducts
 SET PricingType = 'PerPound'
 
---Assign certain categories as 'Each'
+--Assign selected categories as Pricing Type ='Each'
 UPDATE DimProducts
 SET PricingType = 'Each'
 FROM DimProducts AS p
-	JOIN DimSubcategories AS sc
+	INNER JOIN DimSubcategories AS sc		-- only include products that have a Subcategory ID
 	ON p.SubcategoryID = sc.SubcategoryID
-	JOIN DimCategories AS c
+	INNER JOIN DimCategories AS c			-- only include products where the subcategory has a category ID 
 	ON sc.CategoryID = c.CategoryID
 WHERE Category IN('Accessories', 'Containers','Events','Gift Card','Grab & Go')
 
@@ -321,7 +322,7 @@ WHERE ProductName LIKE '%Polka%'
 ---- CREATE A NEW FIELD ON SALES ORDER LINES: POUNDS SOLD
 
 -- Create a view to calculate pounds sold
-DROP VIEW IF EXISTS PoundsSold
+DROP VIEW IF EXISTS PoundsSold;
 
 CREATE VIEW PoundsSold AS
 SELECT 
@@ -331,7 +332,7 @@ SELECT
 	p.PriceEach,
 	round(l.SaleAmount/p.PriceEach,4) AS PoundsSold
 FROM SalesOrderLines AS l
-	JOIN DimProducts as p
+	INNER JOIN DimProducts as p
 	ON l.ProductID = p.ProductID
 WHERE p.PricingType = 'PerPound'
 GO
@@ -345,9 +346,9 @@ ADD PoundsSold DECIMAL(10,4)
 UPDATE SalesOrderLines
 SET PoundsSold = s.PoundsSold
 FROM SalesOrderLines AS l
-	JOIN DimProducts as p
+	INNER JOIN DimProducts as p
 	ON l.ProductID = p.ProductID
-	JOIN PoundsSold as s
+	INNER JOIN PoundsSold as s
 	ON l.SalesOrderLineID = s.SalesOrderLineID
 WHERE p.PricingType = 'PerPound'
 
@@ -355,7 +356,7 @@ WHERE p.PricingType = 'PerPound'
 UPDATE SalesOrderLines
 SET PoundsSold = 0
 FROM SalesOrderLines AS l
-	JOIN DimProducts AS p
+	INNER JOIN DimProducts AS p
 	ON l.ProductID = p.ProductID
 WHERE p.PricingType = 'Each'
 
@@ -378,9 +379,9 @@ SELECT
 	sc.CategoryID,
 	c.Category
 FROM DimProducts AS p
-	JOIN DimSubcategories AS sc
+	INNER JOIN DimSubcategories AS sc
 	ON p.SubcategoryID = sc.SubcategoryID
-	JOIN DimCategories As c
+	INNER JOIN DimCategories As c
 	ON sc.CategoryID = c.CategoryID
 WHERE p.ProductName LIKE '%WHLS%'
 ORDER BY SubcategoryID

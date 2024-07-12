@@ -1,2 +1,2 @@
-# BulkGrocery
-Retail sales trend analysis of a package-free bulk grocery store
+# Zero Waste Market
+Retail sales analysis of a zero waste market

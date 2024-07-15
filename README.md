@@ -37,6 +37,6 @@ The data includes POS transactions from 2019 through 2021.
 
 **Product List:**  An Excel product listing file, including product ID, product category, product subcategory, product name, product cost, and product price.
 
-The results of this analysis are shared with the store owner's consent, but the underlying source data remains private and is not shared in public repositories.
+The results of this analysis are shared with the store owner's consent, but the underlying source data remains private at this time and is not shared in public repositories.
 
 Please see the full project blog post for more https://tinyurl.com/ZeroWasteMarketProject

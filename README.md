@@ -1,8 +1,8 @@
 # Zero Waste Market
 
-Project Blog Post: https://tinyurl.com/ZeroWasteMarketProject
+[Project Blog Post](https://tinyurl.com/ZeroWasteMarketProject) 
 
-Tableau Public Dashboard: https://public.tableau.com/app/profile/emily.adler4909/viz/ZeroWasteMarket/SalesTrends
+[Tableau Public Dashboard](https://public.tableau.com/views/ZeroWasteMarket/SalesTrends?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link)
 
 ## Executive Summary
 The primary objective of this project was to transform data exported from a point-of-sale (POS) system with restrictive reporting capabilities to uncover insights into top-selling products, sales revenue drivers, retail metrics, and customer retention and lifetime revenue. The store was experiencing a drop in monthly sales revenue, and a deeper dive into the data might provide actionable insights.  The data was transformed into a SQL database and Tableau dashboard.  Recommendations focus on enhancing customer retention through targeted marketing strategies and loyalty programs.  
@@ -39,4 +39,5 @@ The data includes POS transactions from 2019 through 2021.
 
 The results of this analysis are shared with the store owner's consent, but the underlying source data remains private at this time and is not shared in public repositories.
 
-Please see the full project blog post for more https://tinyurl.com/ZeroWasteMarketProject
+Please see the [project blog post](https://tinyurl.com/ZeroWasteMarketProject
+) for more.
